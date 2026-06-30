@@ -1,549 +1,440 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wolfie — Talent X-Ray Search</title>
-  <style>
-    :root {
-      --bg: #0f0f13;
-      --surface: #1a1a22;
-      --surface2: #24242f;
-      --border: #2e2e3d;
-      --accent: #a78bfa;
-      --accent2: #f472b6;
-      --accent3: #34d399;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --linkedin: #0077b5;
-      --github: #6e40c9;
-      --stackoverflow: #ef6722;
-      --scholar: #4285f4;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 28px;
-      background: rgba(15,15,19,0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; }
-    .nav-brand .wolf-icon { font-size: 1.5rem; }
-    .nav-brand .brand-name { background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .nav-hint { font-size: 0.78rem; color: var(--muted); }
-    .hero { text-align: center; padding: 60px 20px 40px; }
-    .hero h1 { font-size: 2.4rem; font-weight: 800; line-height: 1.2; margin-bottom: 12px; }
-    .hero h1 .grad { background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .hero p { color: var(--muted); font-size: 1rem; max-width: 540px; margin: 0 auto 28px; }
-    .sources-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 0 20px 40px; }
-    .source-card {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 18px; border-radius: 12px; cursor: pointer;
-      border: 2px solid var(--border); background: var(--surface);
-      font-size: 0.9rem; font-weight: 600; transition: all 0.2s; user-select: none;
-    }
-    .source-card:hover { transform: translateY(-2px); }
-    .source-card.active { transform: translateY(-2px); }
-    .source-card[data-src="linkedin"].active  { border-color: var(--linkedin);  background: rgba(0,119,181,0.15);  color: #60a5fa; }
-    .source-card[data-src="github"].active    { border-color: var(--github);    background: rgba(110,64,201,0.15); color: var(--accent); }
-    .source-card[data-src="stackoverflow"].active { border-color: var(--stackoverflow); background: rgba(239,103,34,0.15); color: #fb923c; }
-    .source-card[data-src="scholar"].active  { border-color: var(--scholar);  background: rgba(66,133,244,0.15); color: #93c5fd; }
-    .src-dot { width:10px; height:10px; border-radius:50%; }
-    .source-card[data-src="linkedin"]      .src-dot { background: var(--linkedin); }
-    .source-card[data-src="github"]        .src-dot { background: var(--github); }
-    .source-card[data-src="stackoverflow"] .src-dot { background: var(--stackoverflow); }
-    .source-card[data-src="scholar"]       .src-dot { background: var(--scholar); }
-    .main { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; display: grid; grid-template-columns: 1fr 400px; gap: 24px; }
-    @media(max-width:860px){ .main { grid-template-columns: 1fr; } }
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
-    .panel-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
-    .field { margin-bottom: 18px; }
-    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-    .field input, .field textarea, .field select {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 10px 14px; color: var(--text);
-      font-size: 0.9rem; outline: none; transition: border-color 0.2s; font-family: inherit;
-    }
-    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
-    .field .hint { font-size: 0.75rem; color: var(--muted); margin-top: 5px; }
-    .tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .tag {
-      padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-      background: var(--surface2); border: 1px solid var(--border); cursor: pointer;
-      transition: all 0.15s; color: var(--muted);
-    }
-    .tag:hover { border-color: var(--accent); color: var(--accent); }
-    .tag.on { background: rgba(167,139,250,0.15); border-color: var(--accent); color: var(--accent); }
-    .tag.on-neg { background: rgba(244,114,182,0.15); border-color: var(--accent2); color: var(--accent2); }
-    .join-toggle { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); margin-left: 8px; vertical-align: middle; }
-    .join-toggle button { padding: 4px 10px; font-size: 0.75rem; font-weight: 700; background: var(--surface2); border: none; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-    .join-toggle button.active { background: var(--accent); color: #000; }
-    .generate-btn {
-      width: 100%; padding: 14px; border: none; border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer;
-      transition: opacity 0.2s; margin-top: 4px;
-    }
-    .generate-btn:hover { opacity: 0.9; }
-    .output-panel { display: flex; flex-direction: column; gap: 16px; }
-    .query-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .qb-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .src-badge { padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; }
-    .src-badge[data-src="linkedin"]      { background:rgba(0,119,181,0.2);  color:#60a5fa; }
-    .src-badge[data-src="github"]        { background:rgba(110,64,201,0.2); color:var(--accent); }
-    .src-badge[data-src="stackoverflow"] { background:rgba(239,103,34,0.2); color:#fb923c; }
-    .src-badge[data-src="scholar"]       { background:rgba(66,133,244,0.2); color:#93c5fd; }
-    .qb-string {
-      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem;
-      color: var(--text); word-break: break-all; line-height: 1.6;
-      max-height: 120px; overflow-y: auto;
-    }
-    .qb-string .op   { color: var(--accent2); font-weight: 700; }
-    .qb-string .site { color: var(--accent3); }
-    .qb-string .neg  { color: #f87171; }
-    .qb-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .btn-open {
-      flex: 1; padding: 9px 14px; border-radius: 9px; border: none;
-      font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-    }
-    .btn-open[data-src="linkedin"]      { background: rgba(0,119,181,0.2);  color:#60a5fa; }
-    .btn-open[data-src="github"]        { background: rgba(110,64,201,0.2); color:var(--accent); }
-    .btn-open[data-src="stackoverflow"] { background: rgba(239,103,34,0.2); color:#fb923c; }
-    .btn-open[data-src="scholar"]       { background: rgba(66,133,244,0.2); color:#93c5fd; }
-    .btn-open:hover { filter: brightness(1.3); }
-    .btn-copy {
-      padding: 9px 14px; border-radius: 9px; border: 1px solid var(--border);
-      background: var(--surface); color: var(--muted); font-size: 0.82rem;
-      font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-copy.copied { border-color: var(--accent3); color: var(--accent3); }
-    .open-all-btn {
-      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--accent);
-      background: transparent; color: var(--accent); font-size: 0.88rem; font-weight: 700;
-      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
-    }
-    .open-all-btn:hover { background: rgba(167,139,250,0.1); }
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
-    .empty-state .es-icon { font-size: 3rem; margin-bottom: 12px; }
-    .empty-state p { font-size: 0.88rem; }
-    .sec-divider {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); margin: 18px 0 10px;
-    }
-    .sec-divider::before, .sec-divider::after { content:''; flex:1; height:1px; background: var(--border); }
-    .keyword-input-row { display: flex; gap: 8px; align-items: flex-start; }
-    .keyword-input-row input { flex: 1; }
-    .keyword-input-row select { width: auto; flex-shrink: 0; padding: 10px 10px; }
-    .added-keywords { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .kw-chip {
-      display: flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-      background: var(--surface2); border: 1px solid var(--border);
-    }
-    .kw-op { font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; }
-    .kw-op.AND { background: rgba(167,139,250,0.2); color: var(--accent); }
-    .kw-op.OR  { background: rgba(52,211,153,0.2);  color: var(--accent3); }
-    .kw-op.NOT { background: rgba(244,114,182,0.2); color: var(--accent2); }
-    .kw-rm { cursor:pointer; color:var(--muted); font-size:0.9rem; line-height:1; margin-left:2px; }
-    .kw-rm:hover { color:#f87171; }
-    .xray-tips {
-      padding: 14px; background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.2);
-      border-radius: 12px; margin-top: 16px;
-    }
-    .xray-tips h4 { font-size: 0.8rem; color: var(--accent); margin-bottom: 8px; font-weight: 700; }
-    .xray-tips ul { list-style: none; font-size: 0.78rem; color: var(--muted); line-height: 1.8; padding: 0; }
-    .xray-tips ul li::before { content: '\2192  '; color: var(--accent); }
-    .add-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--accent); font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
-    .add-btn-neg { color: var(--accent2); }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wolfie — X-Ray Talent Search</title>
+<style>
+:root{--bg:#0f0f13;--surface:#1a1a22;--surface2:#24242f;--border:#2e2e3d;--accent:#a78bfa;--accent2:#f472b6;--accent3:#34d399;--text:#e2e8f0;--muted:#94a3b8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:rgba(15,15,19,.95);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem;}
+.brand-name{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-sub{font-size:.78rem;color:var(--muted);}
+.hero{text-align:center;padding:56px 20px 36px;}
+.hero h1{font-size:2.3rem;font-weight:800;line-height:1.2;margin-bottom:10px;}
+.grad{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{color:var(--muted);font-size:.98rem;max-width:520px;margin:0 auto;}
+.sources{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:28px 20px 36px;}
+.src-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;cursor:pointer;border:2px solid var(--border);background:var(--surface);font-size:.88rem;font-weight:600;transition:all .2s;user-select:none;color:var(--muted);}
+.src-btn:hover{transform:translateY(-2px);}
+.src-dot{width:10px;height:10px;border-radius:50%;}
+.src-btn[data-s="li"] .src-dot{background:#0077b5;}
+.src-btn[data-s="gh"] .src-dot{background:#6e40c9;}
+.src-btn[data-s="so"] .src-dot{background:#ef6722;}
+.src-btn[data-s="sc"] .src-dot{background:#4285f4;}
+.src-btn[data-s="li"].on{border-color:#0077b5;background:rgba(0,119,181,.12);color:#60a5fa;}
+.src-btn[data-s="gh"].on{border-color:#6e40c9;background:rgba(110,64,201,.12);color:var(--accent);}
+.src-btn[data-s="so"].on{border-color:#ef6722;background:rgba(239,103,34,.12);color:#fb923c;}
+.src-btn[data-s="sc"].on{border-color:#4285f4;background:rgba(66,133,244,.12);color:#93c5fd;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px 60px;display:grid;grid-template-columns:1fr 400px;gap:24px;}
+@media(max-width:860px){.wrap{grid-template-columns:1fr;}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;}
+.ptitle{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px;}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:.88rem;outline:none;transition:border-color .2s;font-family:inherit;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field .hint{font-size:.73rem;color:var(--muted);margin-top:4px;}
+.divider{display:flex;align-items:center;gap:10px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 10px;}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border);}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.tag{padding:4px 11px;border-radius:20px;font-size:.76rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;color:var(--muted);}
+.tag:hover{border-color:var(--accent);color:var(--accent);}
+.tag.on{background:rgba(167,139,250,.15);border-color:var(--accent);color:var(--accent);}
+.tag.neg-on{background:rgba(244,114,182,.15);border-color:var(--accent2);color:var(--accent2);}
+.join-row{margin-top:8px;font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.join-tog{display:inline-flex;border-radius:7px;overflow:hidden;border:1px solid var(--border);}
+.join-tog button{padding:3px 10px;font-size:.73rem;font-weight:700;background:var(--surface2);border:none;color:var(--muted);cursor:pointer;}
+.join-tog button.on{background:var(--accent);color:#000;}
+.kw-row{display:flex;gap:8px;align-items:stretch;}
+.kw-row input{flex:1;}
+.kw-row select{width:auto;flex-shrink:0;}
+.add-btn{display:inline-block;margin-top:7px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;}
+.add-btn:hover{border-color:var(--accent);}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.chip{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.76rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);}
+.chip-op{font-size:.62rem;font-weight:800;padding:1px 5px;border-radius:4px;}
+.chip-op.AND{background:rgba(167,139,250,.2);color:var(--accent);}
+.chip-op.OR{background:rgba(52,211,153,.2);color:var(--accent3);}
+.chip-op.NOT{background:rgba(244,114,182,.2);color:var(--accent2);}
+.chip-rm{cursor:pointer;color:var(--muted);margin-left:2px;font-size:.88rem;line-height:1;}
+.chip-rm:hover{color:#f87171;}
+.gen-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:4px;}
+.gen-btn:hover{opacity:.9;}
+.out-panel{display:flex;flex-direction:column;gap:14px;}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty .ei{font-size:3rem;margin-bottom:10px;}
+.empty p{font-size:.86rem;}
+.qbox{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:15px;}
+.qlabel{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.qbadge{padding:2px 8px;border-radius:20px;font-size:.66rem;}
+.qbadge.li{background:rgba(0,119,181,.2);color:#60a5fa;}
+.qbadge.gh{background:rgba(110,64,201,.2);color:var(--accent);}
+.qbadge.so{background:rgba(239,103,34,.2);color:#fb923c;}
+.qbadge.sc{background:rgba(66,133,244,.2);color:#93c5fd;}
+.qstr{font-family:"SF Mono","Fira Code",monospace;font-size:.8rem;color:var(--text);word-break:break-all;line-height:1.6;max-height:110px;overflow-y:auto;}
+.qstr .op{color:var(--accent2);font-weight:700;}
+.qstr .si{color:var(--accent3);}
+.qstr .ng{color:#f87171;}
+.qacts{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;}
+.qopen{flex:1;padding:8px 12px;border-radius:9px;border:none;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:4px;}
+.qopen.li{background:rgba(0,119,181,.2);color:#60a5fa;}
+.qopen.gh{background:rgba(110,64,201,.2);color:var(--accent);}
+.qopen.so{background:rgba(239,103,34,.2);color:#fb923c;}
+.qopen.sc{background:rgba(66,133,244,.2);color:#93c5fd;}
+.qopen:hover{filter:brightness(1.3);}
+.qcopy{padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.qcopy:hover{border-color:var(--accent);color:var(--accent);}
+.qcopy.done{border-color:var(--accent3);color:var(--accent3);}
+.openall{width:100%;padding:12px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:.86rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.openall:hover{background:rgba(167,139,250,.1);}
+.tips-box{padding:14px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:12px;margin-top:14px;}
+.tips-box h4{font-size:.78rem;color:var(--accent);margin-bottom:7px;font-weight:700;}
+.tips-box ul{list-style:none;font-size:.76rem;color:var(--muted);line-height:1.8;}
+.tips-box ul li::before{content:"→ ";color:var(--accent);}
+</style>
 </head>
 <body>
 <nav>
-  <div class="nav-brand">
-    <span class="wolf-icon">&#x1F43A;</span>
-    <span class="brand-name">Wolfie</span>
-    <span style="color:var(--muted);font-weight:400;font-size:0.85rem;">&nbsp;&mdash; X-Ray Talent Search</span>
-  </div>
-  <div class="nav-hint">Boolean X-ray search &bull; LinkedIn &bull; GitHub &bull; Stack Overflow &bull; Google Scholar</div>
+  <div class="brand"><span style="font-size:1.4rem">&#x1F43A;</span><span class="brand-name">Wolfie</span><span style="color:var(--muted);font-weight:400;font-size:.85rem">&nbsp;&mdash; X-Ray Talent Search</span></div>
+  <div class="nav-sub">Boolean X-ray &bull; LinkedIn &bull; GitHub &bull; Stack Overflow &bull; Google Scholar</div>
 </nav>
-
 <div class="hero">
-  <h1>Find Hidden Talent with<br/><span class="grad">X-Ray Boolean Search</span></h1>
+  <h1>Find Hidden Talent with<br><span class="grad">X-Ray Boolean Search</span></h1>
   <p>Build precise Google X-ray strings to surface candidates from LinkedIn, GitHub, Stack Overflow, and Google Scholar &mdash; all in one shot.</p>
 </div>
-
-<div class="sources-row" id="sourcesRow">
-  <div class="source-card active" data-src="linkedin"      onclick="toggleSource('linkedin')">     <div class="src-dot"></div> LinkedIn </div>
-  <div class="source-card active" data-src="github"        onclick="toggleSource('github')">       <div class="src-dot"></div> GitHub </div>
-  <div class="source-card active" data-src="stackoverflow" onclick="toggleSource('stackoverflow')"><div class="src-dot"></div> Stack Overflow </div>
-  <div class="source-card active" data-src="scholar"       onclick="toggleSource('scholar')">      <div class="src-dot"></div> Google Scholar </div>
+<div class="sources">
+  <div class="src-btn on" data-s="li" onclick="toggleSrc(this)"><div class="src-dot"></div>LinkedIn</div>
+  <div class="src-btn on" data-s="gh" onclick="toggleSrc(this)"><div class="src-dot"></div>GitHub</div>
+  <div class="src-btn on" data-s="so" onclick="toggleSrc(this)"><div class="src-dot"></div>Stack Overflow</div>
+  <div class="src-btn on" data-s="sc" onclick="toggleSrc(this)"><div class="src-dot"></div>Google Scholar</div>
 </div>
-
-<div class="main">
+<div class="wrap">
   <div>
     <div class="panel">
-      <div class="panel-title">&#x1F50D; Search Criteria</div>
-
+      <div class="ptitle">&#x1F50D; Search Criteria</div>
       <div class="field">
         <label>Job Title / Role</label>
         <input type="text" id="fRole" placeholder="e.g. Senior Machine Learning Engineer" />
         <div class="hint">Searched as an exact phrase</div>
       </div>
-
-      <div class="sec-divider">Skills &amp; Tech Stack</div>
+      <div class="divider">Skills &amp; Tech Stack</div>
       <div class="field">
         <label>Select skills <span style="font-weight:400">(click to toggle)</span></label>
-        <div class="tags-row" id="skillTags">
-          <span class="tag" data-val="Python">Python</span>
-          <span class="tag" data-val="JavaScript">JavaScript</span>
-          <span class="tag" data-val="TypeScript">TypeScript</span>
-          <span class="tag" data-val="React">React</span>
-          <span class="tag" data-val="Node.js">Node.js</span>
-          <span class="tag" data-val="Go">Go</span>
-          <span class="tag" data-val="Rust">Rust</span>
-          <span class="tag" data-val="Java">Java</span>
-          <span class="tag" data-val="Kotlin">Kotlin</span>
-          <span class="tag" data-val="Swift">Swift</span>
-          <span class="tag" data-val="C++">C++</span>
-          <span class="tag" data-val="SQL">SQL</span>
-          <span class="tag" data-val="PyTorch">PyTorch</span>
-          <span class="tag" data-val="TensorFlow">TensorFlow</span>
-          <span class="tag" data-val="LLM">LLM</span>
-          <span class="tag" data-val="RAG">RAG</span>
-          <span class="tag" data-val="Docker">Docker</span>
-          <span class="tag" data-val="Kubernetes">Kubernetes</span>
-          <span class="tag" data-val="AWS">AWS</span>
-          <span class="tag" data-val="GCP">GCP</span>
-          <span class="tag" data-val="Azure">Azure</span>
-          <span class="tag" data-val="GraphQL">GraphQL</span>
-          <span class="tag" data-val="Vue">Vue</span>
-          <span class="tag" data-val="Angular">Angular</span>
-          <span class="tag" data-val="Next.js">Next.js</span>
-          <span class="tag" data-val="PostgreSQL">PostgreSQL</span>
-          <span class="tag" data-val="MongoDB">MongoDB</span>
-          <span class="tag" data-val="Redis">Redis</span>
-          <span class="tag" data-val="Spark">Spark</span>
-          <span class="tag" data-val="Solidity">Solidity</span>
-          <span class="tag" data-val="R">R</span>
-          <span class="tag" data-val="Scala">Scala</span>
-          <span class="tag" data-val="C#">C#</span>
-          <span class="tag" data-val="Ruby">Ruby</span>
-          <span class="tag" data-val="PHP">PHP</span>
+        <div class="tags" id="skillTags">
+          <span class="tag" data-v="Python">Python</span>
+          <span class="tag" data-v="JavaScript">JavaScript</span>
+          <span class="tag" data-v="TypeScript">TypeScript</span>
+          <span class="tag" data-v="React">React</span>
+          <span class="tag" data-v="Node.js">Node.js</span>
+          <span class="tag" data-v="Go">Go</span>
+          <span class="tag" data-v="Rust">Rust</span>
+          <span class="tag" data-v="Java">Java</span>
+          <span class="tag" data-v="Kotlin">Kotlin</span>
+          <span class="tag" data-v="Swift">Swift</span>
+          <span class="tag" data-v="C++">C++</span>
+          <span class="tag" data-v="SQL">SQL</span>
+          <span class="tag" data-v="PyTorch">PyTorch</span>
+          <span class="tag" data-v="TensorFlow">TensorFlow</span>
+          <span class="tag" data-v="LLM">LLM</span>
+          <span class="tag" data-v="RAG">RAG</span>
+          <span class="tag" data-v="Docker">Docker</span>
+          <span class="tag" data-v="Kubernetes">Kubernetes</span>
+          <span class="tag" data-v="AWS">AWS</span>
+          <span class="tag" data-v="GCP">GCP</span>
+          <span class="tag" data-v="Azure">Azure</span>
+          <span class="tag" data-v="GraphQL">GraphQL</span>
+          <span class="tag" data-v="Vue">Vue</span>
+          <span class="tag" data-v="Angular">Angular</span>
+          <span class="tag" data-v="Next.js">Next.js</span>
+          <span class="tag" data-v="PostgreSQL">PostgreSQL</span>
+          <span class="tag" data-v="MongoDB">MongoDB</span>
+          <span class="tag" data-v="Redis">Redis</span>
+          <span class="tag" data-v="Spark">Spark</span>
+          <span class="tag" data-v="Solidity">Solidity</span>
+          <span class="tag" data-v="R">R</span>
+          <span class="tag" data-v="Scala">Scala</span>
+          <span class="tag" data-v="C#">C#</span>
+          <span class="tag" data-v="Ruby">Ruby</span>
+          <span class="tag" data-v="PHP">PHP</span>
         </div>
-        <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);">
-          Join skills with:
-          <span class="join-toggle" id="skillJoin">
-            <button class="active" onclick="setJoin('OR',this)">OR</button>
-            <button onclick="setJoin('AND',this)">AND</button>
-          </span>
-        </div>
+        <div class="join-row">Join with: <span class="join-tog"><button class="on" id="jOR" onclick="setJoin('OR')">OR</button><button id="jAND" onclick="setJoin('AND')">AND</button></span></div>
       </div>
-
-      <div class="sec-divider">Custom Keywords</div>
+      <div class="divider">Custom Keywords</div>
       <div class="field">
-        <div class="keyword-input-row">
-          <input type="text" id="fCustomKw" placeholder="e.g. open source, PhD, publications" onkeydown="if(event.key==='Enter')addKeyword()" />
-          <select id="fKwOp">
-            <option value="OR">OR</option>
-            <option value="AND">AND</option>
-            <option value="NOT">NOT</option>
-          </select>
+        <div class="kw-row">
+          <input type="text" id="fKw" placeholder="e.g. open source, PhD, publications" onkeydown="if(event.key==='Enter')addKw()" />
+          <select id="fKwOp"><option value="OR">OR</option><option value="AND">AND</option><option value="NOT">NOT (exclude)</option></select>
         </div>
-        <button class="add-btn" onclick="addKeyword()">+ Add Keyword</button>
-        <div class="added-keywords" id="addedKeywords"></div>
+        <button class="add-btn" onclick="addKw()">+ Add Keyword</button>
+        <div class="chips" id="kwChips"></div>
       </div>
-
-      <div class="sec-divider">Location (optional)</div>
+      <div class="divider">Location (optional)</div>
       <div class="field">
         <label>City or Country</label>
-        <input type="text" id="fLocation" placeholder="e.g. San Francisco, London, Remote" />
+        <input type="text" id="fLoc" placeholder="e.g. San Francisco, London, Remote" />
         <div class="hint">Added as a location term to each query</div>
       </div>
-
-      <div class="sec-divider">Noise Filter &mdash; Exclude</div>
+      <div class="divider">Noise Filter &mdash; Exclude</div>
       <div class="field">
         <label>Click to exclude noise keywords</label>
-        <div class="tags-row" id="negTags">
-          <span class="tag" data-val="recruiter">recruiter</span>
-          <span class="tag" data-val="hiring">hiring</span>
-          <span class="tag" data-val="looking for">looking for</span>
-          <span class="tag" data-val="job opportunity">job opportunity</span>
-          <span class="tag" data-val="internship">internship</span>
-          <span class="tag" data-val="student">student</span>
-          <span class="tag" data-val="courses">courses</span>
-          <span class="tag" data-val="bootcamp">bootcamp</span>
-          <span class="tag" data-val="apply now">apply now</span>
-          <span class="tag" data-val="we are hiring">we are hiring</span>
+        <div class="tags" id="negTags">
+          <span class="tag" data-v="recruiter">recruiter</span>
+          <span class="tag" data-v="hiring">hiring</span>
+          <span class="tag" data-v="looking for">looking for</span>
+          <span class="tag" data-v="job opportunity">job opportunity</span>
+          <span class="tag" data-v="internship">internship</span>
+          <span class="tag" data-v="student">student</span>
+          <span class="tag" data-v="courses">courses</span>
+          <span class="tag" data-v="bootcamp">bootcamp</span>
+          <span class="tag" data-v="apply now">apply now</span>
+          <span class="tag" data-v="we are hiring">we are hiring</span>
         </div>
-        <div style="margin-top:10px;">
-          <input type="text" id="fExclude" placeholder="More words to exclude..." onkeydown="if(event.key==='Enter')addExclude()" />
-          <button class="add-btn add-btn-neg" onclick="addExclude()" style="margin-top:6px;">+ Exclude</button>
-        </div>
-        <div class="added-keywords" id="addedExcludes"></div>
+        <input type="text" id="fExcl" placeholder="More words to exclude..." style="margin-top:10px" onkeydown="if(event.key==='Enter')addExcl()" />
+        <button class="add-btn" onclick="addExcl()" style="color:var(--accent2)">+ Exclude</button>
+        <div class="chips" id="exChips"></div>
       </div>
-
-      <button class="generate-btn" onclick="generate()">&#x1F50D; Generate X-Ray Strings</button>
+      <button class="gen-btn" onclick="generate()">&#x1F50D; Generate X-Ray Strings</button>
     </div>
-
-    <div class="xray-tips">
+    <div class="tips-box">
       <h4>&#x1F4A1; How X-Ray Search Works</h4>
       <ul>
-        <li>Uses Google's <strong>site:</strong> operator to search inside LinkedIn, GitHub, etc.</li>
+        <li>Uses Google's <strong>site:</strong> operator to search inside platforms</li>
         <li>Bypasses login walls &mdash; surfaces publicly indexed profiles</li>
-        <li>LinkedIn: targets <strong>/in/</strong> profiles (not job posts)</li>
-        <li>GitHub: targets user pages, repos, and README content</li>
-        <li>Stack Overflow: targets user profiles with answered questions</li>
-        <li>Google Scholar: targets author citation pages</li>
-        <li>Add exclusions to filter out recruiters, job posts &amp; noise</li>
+        <li>LinkedIn: targets <strong>/in/</strong> profiles only (not job posts)</li>
+        <li>GitHub: targets user pages and repositories</li>
+        <li>Stack Overflow: targets user profiles with activity</li>
+        <li>Google Scholar: targets researcher citation pages</li>
+        <li>Add exclusions to filter recruiters &amp; job posts</li>
       </ul>
     </div>
   </div>
-
-  <div class="output-panel" id="outputPanel">
-    <div class="empty-state">
-      <div class="es-icon">&#x1F43A;</div>
-      <p>Fill in the form and hit <strong>Generate</strong><br/>to build your X-ray boolean strings</p>
-    </div>
+  <div class="out-panel" id="outPanel">
+    <div class="empty"><div class="ei">&#x1F43A;</div><p>Fill in the form and hit <strong>Generate</strong><br>to build your X-ray boolean strings</p></div>
   </div>
 </div>
-
 <script>
-const SOURCES = ['linkedin','github','stackoverflow','scholar'];
-const activeSources = new Set(SOURCES);
-let skillJoin = 'OR';
-const skillSelected = new Set();
-const negSelected = new Set();
-let customKeywords = [];
-let customExcludes = [];
+var activeSrc = {li:true, gh:true, so:true, sc:true};
+var skillJoin = "OR";
+var skillSel = {};
+var negSel = {};
+var kwList = [];
+var exList = [];
 
-function toggleSource(src) {
-  const el = document.querySelector('.source-card[data-src="' + src + '"]');
-  if (activeSources.has(src)) { activeSources.delete(src); el.classList.remove('active'); }
-  else { activeSources.add(src); el.classList.add('active'); }
+function toggleSrc(el) {
+  var s = el.getAttribute("data-s");
+  if (activeSrc[s]) { activeSrc[s] = false; el.classList.remove("on"); }
+  else { activeSrc[s] = true; el.classList.add("on"); }
 }
 
-document.querySelectorAll('#skillTags .tag').forEach(function(t) {
-  t.addEventListener('click', function() {
-    var v = t.dataset.val;
-    if (skillSelected.has(v)) { skillSelected.delete(v); t.classList.remove('on'); }
-    else { skillSelected.add(v); t.classList.add('on'); }
+document.querySelectorAll("#skillTags .tag").forEach(function(t) {
+  t.addEventListener("click", function() {
+    var v = t.getAttribute("data-v");
+    if (skillSel[v]) { delete skillSel[v]; t.classList.remove("on"); }
+    else { skillSel[v] = true; t.classList.add("on"); }
   });
 });
 
-document.querySelectorAll('#negTags .tag').forEach(function(t) {
-  t.addEventListener('click', function() {
-    var v = t.dataset.val;
-    if (negSelected.has(v)) { negSelected.delete(v); t.classList.remove('on-neg'); }
-    else { negSelected.add(v); t.classList.add('on-neg'); }
+document.querySelectorAll("#negTags .tag").forEach(function(t) {
+  t.addEventListener("click", function() {
+    var v = t.getAttribute("data-v");
+    if (negSel[v]) { delete negSel[v]; t.classList.remove("neg-on"); }
+    else { negSel[v] = true; t.classList.add("neg-on"); }
   });
 });
 
-function setJoin(val, btn) {
+function setJoin(val) {
   skillJoin = val;
-  document.querySelectorAll('#skillJoin button').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
+  document.getElementById("jOR").className = val === "OR" ? "on" : "";
+  document.getElementById("jAND").className = val === "AND" ? "on" : "";
 }
 
-function addKeyword() {
-  var inp = document.getElementById('fCustomKw');
-  var op  = document.getElementById('fKwOp').value;
-  var val = inp.value.trim();
-  if (!val) return;
-  val.split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(v) {
-    var idx = customKeywords.length;
-    customKeywords.push({ v: v, op: op });
-    renderChip(v, op, idx, 'addedKeywords', 'kw');
+function addKw() {
+  var inp = document.getElementById("fKw");
+  var op = document.getElementById("fKwOp").value;
+  var raw = inp.value.trim();
+  if (!raw) return;
+  raw.split(",").map(function(s){ return s.trim(); }).filter(Boolean).forEach(function(v) {
+    kwList.push({v:v, op:op});
+    renderChip("kwChips", v, op, kwList.length-1, "kw");
   });
-  inp.value = '';
+  inp.value = "";
 }
 
-function addExclude() {
-  var inp = document.getElementById('fExclude');
-  var val = inp.value.trim();
-  if (!val) return;
-  val.split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(v) {
-    var idx = customExcludes.length;
-    customExcludes.push({ v: v });
-    renderChip(v, 'NOT', idx, 'addedExcludes', 'ex');
+function addExcl() {
+  var inp = document.getElementById("fExcl");
+  var raw = inp.value.trim();
+  if (!raw) return;
+  raw.split(",").map(function(s){ return s.trim(); }).filter(Boolean).forEach(function(v) {
+    exList.push({v:v});
+    renderChip("exChips", v, "NOT", exList.length-1, "ex");
   });
-  inp.value = '';
+  inp.value = "";
 }
 
-function renderChip(val, op, idx, containerId, prefix) {
-  var container = document.getElementById(containerId);
-  var chip = document.createElement('div');
-  chip.className = 'kw-chip';
-  chip.id = prefix + '_chip_' + idx;
-  chip.innerHTML = '<span class="kw-op ' + op + '">' + op + '</span> ' + escHtml(val) + ' <span class="kw-rm" onclick="removeChip('' + prefix + '', ' + idx + ')">&#215;</span>';
-  container.appendChild(chip);
+function renderChip(containerId, val, op, idx, prefix) {
+  var c = document.getElementById(containerId);
+  var chip = document.createElement("div");
+  chip.className = "chip";
+  chip.id = prefix+"_"+idx;
+  var opSpan = document.createElement("span");
+  opSpan.className = "chip-op " + op;
+  opSpan.textContent = op;
+  var txt = document.createTextNode(" " + val + " ");
+  var rm = document.createElement("span");
+  rm.className = "chip-rm";
+  rm.textContent = "×";
+  rm.setAttribute("data-prefix", prefix);
+  rm.setAttribute("data-idx", idx);
+  rm.onclick = function() { removeChip(this.getAttribute("data-prefix"), this.getAttribute("data-idx")); };
+  chip.appendChild(opSpan);
+  chip.appendChild(txt);
+  chip.appendChild(rm);
+  c.appendChild(chip);
 }
 
 function removeChip(prefix, idx) {
-  var chip = document.getElementById(prefix + '_chip_' + idx);
-  if (chip) chip.remove();
-  if (prefix === 'kw') customKeywords[idx] = null;
-  else customExcludes[idx] = null;
+  var el = document.getElementById(prefix+"_"+idx);
+  if (el) el.remove();
+  if (prefix === "kw") kwList[idx] = null;
+  else exList[idx] = null;
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-function qq(s) {
-  if (/s/.test(s)) return '"' + s + '"';
-  return s;
-}
-
-function buildSkillsClause(skills) {
-  if (!skills.length) return '';
-  var parts = skills.map(qq);
-  if (skillJoin === 'AND') return parts.join(' ');
-  return parts.length > 1 ? '(' + parts.join(' OR ') + ')' : parts[0];
-}
-
-function buildExclusions() {
-  var neg = [...negSelected, ...customExcludes.filter(function(k){ return k && k.v; }).map(function(k){ return k.v; })];
-  if (!neg.length) return '';
-  return ' -(' + neg.map(qq).join(' OR ') + ')';
+function qqq(s) {
+  return /\s/.test(s) ? "\"" + s + "\"" : s;
 }
 
 function buildQuery(src, role, skills, kws, loc) {
-  var sitePrefix = '';
-  if (src === 'linkedin')      sitePrefix = 'site:linkedin.com/in/';
-  if (src === 'github')        sitePrefix = 'site:github.com';
-  if (src === 'stackoverflow') sitePrefix = 'site:stackoverflow.com/users/';
-  if (src === 'scholar')       sitePrefix = 'site:scholar.google.com/citations';
-
-  var parts = [sitePrefix];
-  if (role) parts.push('"' + role + '"');
-
-  var skillsC = buildSkillsClause(skills);
-  if (skillsC) parts.push(skillsC);
-
-  var ands = kws.filter(function(k){ return k && k.op === 'AND'; }).map(function(k){ return qq(k.v); });
-  var ors  = kws.filter(function(k){ return k && k.op === 'OR';  }).map(function(k){ return qq(k.v); });
-  if (ands.length) parts.push(ands.join(' '));
-  if (ors.length)  parts.push(ors.length > 1 ? '(' + ors.join(' OR ') + ')' : ors[0]);
-
-  if (loc) parts.push(qq(loc));
-
-  var notKws = kws.filter(function(k){ return k && k.op === 'NOT'; }).map(function(k){ return qq(k.v); });
-  var excl = buildExclusions();
-  if (notKws.length) excl += (excl ? ' ' : ' ') + '-(' + notKws.join(' OR ') + ')';
-
-  return parts.join(' ') + excl;
+  var siteMap = {
+    li: "site:linkedin.com/in/",
+    gh: "site:github.com",
+    so: "site:stackoverflow.com/users/",
+    sc: "site:scholar.google.com/citations"
+  };
+  var parts = [siteMap[src]];
+  if (role) parts.push("\"" + role + "\"");
+  if (skills.length) {
+    var sp = skills.map(qqq);
+    if (skillJoin === "AND") parts.push(sp.join(" "));
+    else parts.push(sp.length > 1 ? "(" + sp.join(" OR ") + ")" : sp[0]);
+  }
+  var ands = kws.filter(function(k){ return k && k.op==="AND"; }).map(function(k){ return qqq(k.v); });
+  var ors  = kws.filter(function(k){ return k && k.op==="OR";  }).map(function(k){ return qqq(k.v); });
+  var nots = kws.filter(function(k){ return k && k.op==="NOT"; }).map(function(k){ return qqq(k.v); });
+  if (ands.length) parts.push(ands.join(" "));
+  if (ors.length)  parts.push(ors.length > 1 ? "(" + ors.join(" OR ") + ")" : ors[0]);
+  if (loc) parts.push(qqq(loc));
+  var negAll = Object.keys(negSel).concat(nots);
+  var exNots = exList.filter(Boolean).map(function(k){ return qqq(k.v); });
+  negAll = negAll.concat(exNots);
+  var excl = negAll.length ? " -(" + negAll.map(qqq).join(" OR ") + ")" : "";
+  return parts.join(" ") + excl;
 }
 
-function highlightQuery(str) {
-  return escHtml(str)
-    .replace(/OR/g, '<span class="op">OR</span>')
-    .replace(/AND/g, '<span class="op">AND</span>')
-    .replace(/(site:[^s]+)/g, '<span class="site">$1</span>')
-    .replace(/(-([^)]+))/g, '<span class="neg">$1</span>');
+function hlQuery(str) {
+  return esc(str)
+    .replace(/\bOR\b/g, "<span class=\"op\">OR</span>")
+    .replace(/\bAND\b/g, "<span class=\"op\">AND</span>")
+    .replace(/(site:[^\s]+)/g, "<span class=\"si\">$1</span>")
+    .replace(/(-\([^)]+\))/g, "<span class=\"ng\">$1</span>");
 }
 
-function srcLabel(src) {
-  if (src === 'linkedin') return 'LinkedIn';
-  if (src === 'github') return 'GitHub';
-  if (src === 'stackoverflow') return 'Stack Overflow';
-  if (src === 'scholar') return 'Google Scholar';
-  return src;
-}
-function srcIcon(src) {
-  if (src === 'linkedin') return '&#x1F4BC;';
-  if (src === 'github') return '&#x1F419;';
-  if (src === 'stackoverflow') return '&#x1F4DA;';
-  if (src === 'scholar') return '&#x1F393;';
-  return '&#x1F50D;';
+function srcInfo(s) {
+  var m = {
+    li: {label:"LinkedIn",      icon:"&#x1F4BC;"},
+    gh: {label:"GitHub",        icon:"&#x1F419;"},
+    so: {label:"Stack Overflow", icon:"&#x1F4DA;"},
+    sc: {label:"Google Scholar", icon:"&#x1F393;"}
+  };
+  return m[s];
 }
 
 function generate() {
-  var role = document.getElementById('fRole').value.trim();
-  var skills = [...skillSelected];
-  var loc = document.getElementById('fLocation').value.trim();
-  var kws = customKeywords.filter(Boolean);
-
+  var role   = document.getElementById("fRole").value.trim();
+  var skills = Object.keys(skillSel);
+  var loc    = document.getElementById("fLoc").value.trim();
+  var kws    = kwList.filter(Boolean);
   if (!role && !skills.length && !kws.length) {
-    alert('Please enter a job title or select some skills to search for.');
+    alert("Please enter a job title or select some skills.");
     return;
   }
-
-  var panel = document.getElementById('outputPanel');
-  panel.innerHTML = '';
-
-  var queries = [];
-  activeSources.forEach(function(src) {
-    var q = buildQuery(src, role, skills, kws, loc);
-    queries.push({ src: src, q: q });
+  var panel = document.getElementById("outPanel");
+  panel.innerHTML = "";
+  var results = [];
+  ["li","gh","so","sc"].forEach(function(s) {
+    if (!activeSrc[s]) return;
+    var q = buildQuery(s, role, skills, kws, loc);
+    results.push({s:s, q:q});
   });
-
-  if (!queries.length) {
-    panel.innerHTML = '<div class="empty-state"><div class="es-icon">&#x26A0;&#xFE0F;</div><p>Select at least one source above.</p></div>';
+  if (!results.length) {
+    panel.innerHTML = "<div class=\"empty\"><div class=\"ei\">&#x26A0;&#xFE0F;</div><p>Select at least one source.</p></div>";
     return;
   }
-
-  queries.forEach(function(item, i) {
-    var src = item.src;
-    var q   = item.q;
-    var box = document.createElement('div');
-    box.className = 'query-box';
-    var openUrl = 'https://www.google.com/search?q=' + encodeURIComponent(q);
-    box.innerHTML =
-      '<div class="qb-label">' + srcIcon(src) + ' ' + srcLabel(src) +
-      ' <span class="src-badge" data-src="' + src + '">X-Ray</span></div>' +
-      '<div class="qb-string" id="qs_' + src + '">' + highlightQuery(q) + '</div>' +
-      '<div class="qb-actions">' +
-        '<button class="btn-open" data-src="' + src + '" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent(document.getElementById('qs_' + src + '').innerText), '_blank')">' +
-          srcIcon(src) + ' Search ' + srcLabel(src) +
-        '</button>' +
-        '<button class="btn-copy" id="cp_' + src + '" onclick="copyQuery('' + src + '')">' +
-          '&#x1F4CB; Copy' +
-        '</button>' +
-      '</div>';
+  results.forEach(function(item) {
+    var info = srcInfo(item.s);
+    var box  = document.createElement("div");
+    box.className = "qbox";
+    var lbl = document.createElement("div");
+    lbl.className = "qlabel";
+    lbl.innerHTML = info.icon + " " + info.label + " <span class=\"qbadge " + item.s + "\">X-Ray</span>";
+    var qstr = document.createElement("div");
+    qstr.className = "qstr";
+    qstr.id = "qs_" + item.s;
+    qstr.innerHTML = hlQuery(item.q);
+    var acts = document.createElement("div");
+    acts.className = "qacts";
+    var openBtn = document.createElement("button");
+    openBtn.className = "qopen " + item.s;
+    openBtn.innerHTML = info.icon + " Search " + info.label;
+    (function(q) {
+      openBtn.onclick = function() { window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank"); };
+    })(item.q);
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "qcopy";
+    copyBtn.id = "cp_" + item.s;
+    copyBtn.textContent = "Copy";
+    (function(q, btn) {
+      btn.onclick = function() {
+        navigator.clipboard.writeText(q).then(function() {
+          btn.classList.add("done"); btn.textContent = "Copied!";
+          setTimeout(function(){ btn.classList.remove("done"); btn.textContent = "Copy"; }, 2000);
+        }).catch(function() {
+          var ta = document.createElement("textarea");
+          ta.value = q; ta.style.cssText = "position:fixed;opacity:0";
+          document.body.appendChild(ta); ta.select();
+          document.execCommand("copy"); document.body.removeChild(ta);
+          btn.classList.add("done"); btn.textContent = "Copied!";
+          setTimeout(function(){ btn.classList.remove("done"); btn.textContent = "Copy"; }, 2000);
+        });
+      };
+    })(item.q, copyBtn);
+    acts.appendChild(openBtn);
+    acts.appendChild(copyBtn);
+    box.appendChild(lbl);
+    box.appendChild(qstr);
+    box.appendChild(acts);
     panel.appendChild(box);
   });
-
-  if (queries.length > 1) {
-    var openAll = document.createElement('button');
-    openAll.className = 'open-all-btn';
-    openAll.innerHTML = '&#x1F680; Open All ' + queries.length + ' Sources in New Tabs';
-    openAll.onclick = function() {
-      queries.forEach(function(item) {
-        window.open('https://www.google.com/search?q=' + encodeURIComponent(item.q), '_blank');
-      });
-    };
-    panel.appendChild(openAll);
+  if (results.length > 1) {
+    var allBtn = document.createElement("button");
+    allBtn.className = "openall";
+    allBtn.textContent = "Open All " + results.length + " Sources in New Tabs";
+    (function(arr) {
+      allBtn.onclick = function() {
+        arr.forEach(function(item) {
+          window.open("https://www.google.com/search?q=" + encodeURIComponent(item.q), "_blank");
+        });
+      };
+    })(results);
+    panel.appendChild(allBtn);
   }
-
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function copyQuery(src) {
-  var el = document.getElementById('qs_' + src);
-  var text = el.innerText || el.textContent;
-  navigator.clipboard.writeText(text).then(function() {
-    var btn = document.getElementById('cp_' + src);
-    btn.classList.add('copied');
-    btn.innerHTML = '&#x2705; Copied';
-    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = '&#x1F4CB; Copy'; }, 2000);
-  }).catch(function() {
-    var ta = document.createElement('textarea');
-    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  });
+  panel.scrollIntoView({behavior:"smooth", block:"start"});
 }
 </script>
 </body>
